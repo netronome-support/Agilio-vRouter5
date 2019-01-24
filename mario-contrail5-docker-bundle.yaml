@@ -1,0 +1,379 @@
+series: bionic
+variables:
+  openstack-origin:    &openstack-origin    distro
+  openstack-region:    &openstack-region    RegionOne
+
+  oam-space:           &oam-space           oam-space
+  admin-space:         &admin-space         oam-space
+  public-space:        &public-space        oam-space
+  internal-space:      &internal-space      internal-space
+  overlay-space:       &overlay-space       internal-space
+  ceph-public-space:   &ceph-public-space   ceph-access-space
+  ceph-cluster-space:  &ceph-cluster-space  ceph-replica-space
+  oam-space-constr:    &oam-space-constr    spaces=oam-space
+  ceph-access-constr:  &ceph-access-constr  spaces=ceph-access-space
+  osd-devices:         &osd-devices         /dev/sdb
+  aodh-vip:            &aodh-vip            "10.246.64.80"
+  ceilometer-vip:      &ceilometer-vip      "10.246.64.81"
+  cinder-vip:          &cinder-vip          "10.246.64.82"
+  dashboard-vip:       &dashboard-vip       "10.246.64.83"
+  designate-vip:       &designate-vip       "10.246.64.84"
+  glance-vip:          &glance-vip          "10.246.64.85"
+  gnocchi-vip:         &gnocchi-vip         "10.246.64.86"
+  heat-vip:            &heat-vip            "10.246.64.87"
+  keystone-vip:        &keystone-vip        "10.246.64.88"
+  mysql-vip:           &mysql-vip           "10.246.64.89"
+  neutron-api-vip:     &neutron-api-vip     "10.246.64.90"
+  nova-cc-vip:         &nova-cc-vip         "10.246.64.91"
+  rados-gateway-vip:   &rados-gateway-vip   "10.246.64.92"
+  contrail-keepalived: &contrail-keepalived-vip   "10.246.64.93"
+
+  worker-multiplier:   &worker-multiplier   0.25
+  docker-registry:     &docker-registry     hub.juniper.net/contrail
+  docker-user:         &docker-user         
+  docker-password:     &docker-password    
+  image-tag:           &image-tag           5.0.2-0.360-queens
+  #http-proxy:          &http-proxy         
+  #https-proxy:         &https-proxy         
+machines:
+  "1":
+    constraints: tags=controller
+    series: bionic
+  "2":
+    constraints: tags=compute
+    series: bionic
+  "3":
+    constraints: tags=compute
+    series: bionic
+#  "4":
+#    constraints: tags=foundation-nodes
+#    series: bionic
+#  "5":
+#    constraints: tags=foundation-nodes
+#    series: bionic
+#  "6":
+#    constraints: tags=foundation-nodes
+#    series: bionic
+#    #  "7":
+#    #constraints: tags=foundation-nodes
+#    #series: bionic
+#    #"8":
+#    #constraints: tags=foundation-nodes
+#    #series: bionic
+#  "9":
+#    constraints: tags=landscape
+#    series: bionic
+#  "10":
+#    constraints: tags=landscape
+#    series: bionic
+#  "11":
+#    constraints: tags=landscape
+#    series: bionic
+#  "12":
+#    constraints: tags=landscapeamqp
+#    series: bionic
+#  "13":
+#    constraints: tags=landscapeamqp
+#    series: bionic
+#  "14":
+#    constraints: tags=landscapeamqp
+#    series: bionic
+services:
+  ubuntu:
+    charm: cs:ubuntu
+    num_units: 1
+    bindings:
+            # "": *oam-space
+    to: [ "1" ]
+  ntp:
+    charm: cs:ntp
+    num_units: 0
+    options:
+      #source: ntp.juniper.net
+      source: ntp.ubuntu.com
+  mysql:
+    charm: cs:percona-cluster
+    num_units: 1
+    bindings:
+            #"": *oam-space
+    options:
+      dataset-size: 15%
+      max-connections: 10000
+      root-password: password
+      sst-password: password
+      #vip: *mysql-vip
+      min-cluster-size: 1
+      #vip_cidr: 24
+    to: [ "lxd:1" ]
+  rabbitmq-server:
+    charm: cs:rabbitmq-server
+    num_units: 1
+    bindings:
+            #"": *oam-space
+    options:
+      min-cluster-size: 1
+    to: [ "lxd:1" ]
+#  heat:
+#    charm: cs:xenial/heat
+#    num_units: 1
+#    bindings:
+#            #"": *oam-space
+#    options:
+#            #vip: *heat-vip
+#      #vip_cidr: 24
+#    to: [ "1" ]
+  keystone:
+    charm: cs:keystone
+    num_units: 1
+    bindings:
+            #"": *oam-space
+    options:
+            #worker-multiplier: *worker-multiplier
+      admin-password: password
+      #admin-role: admin
+      openstack-origin: *openstack-origin
+      #vip: *keystone-vip
+      #region: *openstack-region
+      preferred-api-version: 3
+      #vip_cidr: 24
+    to: [ "lxd:1" ]
+  nova-cloud-controller:
+    charm: cs:nova-cloud-controller
+    num_units: 1
+    bindings:
+            # "": *oam-space
+    options:
+      network-manager: Neutron
+      openstack-origin: *openstack-origin
+      #vip: *nova-cc-vip
+      #vip_cidr: 24
+    to: [ "lxd:1" ]
+  neutron-api:
+    charm: cs:neutron-api
+    num_units: 1
+    series: bionic
+    bindings:
+            # "": *oam-space
+    options:
+      manage-neutron-plugin-legacy-mode: false
+      openstack-origin: *openstack-origin
+      #vip: *neutron-api-vip
+      #vip_cidr: 24
+    to: [ "lxd:1" ]
+    #to: [ "lxd:1", "lxd:2", "lxd:3" ]
+  glance:
+    charm: cs:glance
+    num_units: 1
+    bindings:
+            #"": *oam-space
+    options:
+      openstack-origin: *openstack-origin
+      #vip: *glance-vip
+      #vip_cidr: 24
+    to: [ "lxd:1" ]
+  openstack-dashboard:
+    charm: cs:openstack-dashboard
+    num_units: 1
+    bindings:
+            #"": *public-space
+    options:
+      openstack-origin: *openstack-origin
+      # vip: *dashboard-vip
+      #vip_cidr: 24
+    to: [ "lxd:1" ]
+  nova-compute:
+    charm: cs:nova-compute
+    num_units: 2
+    bindings:
+            #"": *oam-space
+    options:
+      openstack-origin: *openstack-origin
+    to: [ "2", "3" ]
+#  mysql-hacluster:
+#    charm: cs:hacluster
+#    options:
+#      cluster_count: 3
+#    num_units: 0
+#  keystone-hacluster:
+#    charm: cs:hacluster
+#    options:
+#      cluster_count: 3
+#    num_units: 0
+#  ncc-hacluster:
+#    charm: cs:hacluster
+#    options:
+#      cluster_count: 3
+#    num_units: 0
+#  neutron-hacluster:
+#    charm: cs:hacluster
+#    options:
+#      cluster_count: 3
+#    num_units: 0
+#  glance-hacluster:
+#    charm: cs:hacluster
+#    options:
+#      cluster_count: 3
+#    num_units: 0
+#  dashboard-hacluster:
+#    charm: cs:hacluster
+#    options:
+#      cluster_count: 3
+#    num_units: 0
+#  heat-hacluster:
+#    charm: cs:hacluster
+#    options:
+#      cluster_count: 3
+#    num_units: 0
+  contrail-openstack:
+    charm: ./contrail-openstack
+    series: bionic
+    num_units: 0
+    options:
+      docker-registry: *docker-registry
+      docker-user: *docker-user
+      docker-password: *docker-password
+      image-tag: *image-tag
+      #http_proxy: *http-proxy
+      #https_proxy: *https-proxy
+      #no_proxy: *no-proxy
+  contrail-agent:
+    charm: ./contrail-agent
+    num_units: 0
+    series: bionic
+    options:
+      log-level: "SYS_DEBUG"
+      docker-registry: *docker-registry
+      docker-user: *docker-user
+      docker-password: *docker-password
+      image-tag: *image-tag
+      #http_proxy: *http-proxy
+      #https_proxy: *https-proxy
+      #no_proxy: *no-proxy
+  contrail-analytics:
+    charm: ./contrail-analytics
+    num_units: 1
+    series: bionic
+    bindings:
+            #"": *oam-space
+    options:
+      log-level: "SYS_DEBUG"
+      docker-registry: *docker-registry
+      docker-user: *docker-user
+      docker-password: *docker-password
+      image-tag: *image-tag
+      #http_proxy: *http-proxy
+      #https_proxy: *https-proxy
+      #no_proxy: *no-proxy
+    to: [ "1" ]
+  contrail-analyticsdb:
+    charm: ./contrail-analyticsdb
+    num_units: 1
+    series: bionic
+    bindings:
+            # "": *oam-space
+    options:
+      log-level: "SYS_DEBUG"
+      cassandra-minimum-diskgb: "4"
+      cassandra-jvm-extra-opts: "-Xms8g -Xmx8g"
+      docker-registry: *docker-registry
+      docker-user: *docker-user
+      docker-password: *docker-password
+      image-tag: *image-tag
+      #http_proxy: *http-proxy
+      #https_proxy: *https-proxy
+      #no_proxy: *no-proxy
+    to: [ "1" ]
+  contrail-controller:
+    charm: ./contrail-controller
+    series: bionic
+    num_units: 1
+    bindings:
+            #"": *oam-space
+    options:
+      log-level: "SYS_DEBUG"
+      cassandra-minimum-diskgb: "4"
+      cassandra-jvm-extra-opts: "-Xms8g -Xmx8g"
+      docker-registry: *docker-registry
+      docker-user: *docker-user
+      docker-password: *docker-password
+      image-tag: *image-tag
+      #http_proxy: *http-proxy
+      #https_proxy: *https-proxy
+      #no_proxy: *no-proxy
+      auth-mode: no-auth
+    to: [ "1" ]
+  contrail-keystone-auth:
+    charm: ./contrail-keystone-auth
+    series: bionic
+    num_units: 1
+    bindings:
+            #"": *oam-space
+    to: [ "lxd:1" ]
+
+    #contrail-keepalived:
+    #charm: cs:~boucherv29/keepalived-19
+    #series: bionic
+    #options:
+    #  virtual_ip: *contrail-keepalived-vip
+    #contrail-haproxy:
+    #charm: haproxy
+    #series: bionic
+    #expose: true
+    #options:
+    #  peering_mode: "active-active"
+    #to: [ "1", "2", "3" ]
+
+relations:
+  # openstack
+  - [ "ubuntu", "ntp" ]
+    #- [ "heat", "ntp" ]
+  - [ "neutron-api", "ntp" ]
+    #- [ mysql, mysql-hacluster ]
+  - [ "keystone", "mysql" ]
+    #- [ keystone, keystone-hacluster ]
+  - [ "glance", "mysql" ]
+  - [ "glance", "keystone" ]
+    #- [ glance, glance-hacluster ]
+  - [ "nova-cloud-controller:shared-db", "mysql:shared-db" ]
+  - [ "nova-cloud-controller:amqp", "rabbitmq-server:amqp" ]
+  - [ "nova-cloud-controller", "keystone" ]
+  - [ "nova-cloud-controller", "glance" ]
+    #- [ nova-cloud-controller, ncc-hacluster ]
+  - [ "neutron-api", "mysql" ]
+  - [ "neutron-api", "rabbitmq-server" ]
+  - [ "neutron-api", "nova-cloud-controller" ]
+  - [ "neutron-api", "keystone" ]
+    #- [ neutron-api, neutron-hacluster ]
+  # - [ "nova-compute:shared-db", "mysql:shared-db" ]
+  - [ "nova-compute:amqp", "rabbitmq-server:amqp" ]
+  - [ "nova-compute", "glance" ]
+  - [ "nova-compute", "nova-cloud-controller" ]
+  - [ "nova-compute", "ntp" ]
+  - [ "openstack-dashboard:identity-service", "keystone" ]
+    #- [ openstack-dashboard, dashboard-hacluster ]
+    #- [ "heat", "mysql" ]
+    #- [ "heat", "rabbitmq-server" ]
+    #- [ "heat", "keystone" ]
+    #- [ "heat", "heat-hacluster" ]
+
+  #contrail
+  - [ "contrail-keystone-auth", "keystone" ]
+  - [ "contrail-controller", "contrail-keystone-auth" ]
+  - [ "contrail-analytics", "contrail-analyticsdb" ]
+  - [ "contrail-controller", "contrail-analytics" ]
+  - [ "contrail-controller", "contrail-analyticsdb" ]
+  - [ "contrail-openstack", "nova-compute" ]
+  - [ "contrail-openstack", "neutron-api" ]
+  #- [ "contrail-openstack", "heat" ]
+  - [ "contrail-openstack", "contrail-controller" ]
+  - [ "contrail-agent:juju-info", "nova-compute:juju-info" ]
+  - [ "contrail-agent", "contrail-controller"]
+
+  #haproxy
+  #- [ "contrail-haproxy:juju-info", "keepalived:juju-info" ]
+  #- [ "contrail-analytics", "contrail-haproxy" ]
+  #- [ "contrail-controller:http-services", "contrail-haproxy" ]
+  #- [ "contrail-controller:https-services", "contrail-haproxy" ]
+
+
+
