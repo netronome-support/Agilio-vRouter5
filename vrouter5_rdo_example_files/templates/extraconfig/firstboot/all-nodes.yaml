@@ -1,0 +1,20 @@
+heat_template_version: 2014-10-16
+
+description: >
+  Firstboot actions (set ulimits, enable logging, wipe disks)
+
+resources:
+  userdata:
+    type: OS::Heat::MultipartMime
+    properties:
+      parts:
+      - config: {get_resource: firstboot}
+
+  firstboot:
+    type: OS::Heat::SoftwareConfig
+    properties:
+      config: {get_file: firstboot.sh}
+
+outputs:
+  OS::stack_id:
+    value: {get_resource: userdata}

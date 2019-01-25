@@ -1,0 +1,62 @@
+resource_registry:
+  # Network Interface templates
+  OS::TripleO::Compute::Net::SoftwareConfig:
+    ./nic-configs/compute.yaml
+  OS::TripleO::Controller::Net::SoftwareConfig:
+    ./nic-configs/controller.yaml
+  OS::TripleO::ContrailController::Net::SoftwareConfig:
+    ./nic-configs/contrail-controller.yaml
+
+parameter_defaults:
+  NtpServer: ntp.is.co.za
+  CloudDomain: 'netronome.com'
+  DnsServers: ["8.8.8.8","192.168.3.3"]
+  EC2MetadataIp: 10.0.110.3
+  ControlPlaneDefaultRoute: 10.0.110.3
+  ControlPlaneSubnetCidr: '24'
+  ExternalInterfaceDefaultRoute: 10.0.112.254
+  ExternalNetCidr: 10.0.112.0/22
+  ExternalNetworkVlanID: 720
+  ExternalAllocationPools: [{'start': '10.0.112.100', 'end': '10.0.112.199'}]
+  StorageNetCidr: 10.0.113.0/24
+  StorageNetworkVlanID: 740
+  StorageAllocationPools: [{'start': '10.0.113.100', 'end': '10.0.113.199'}]
+  TenantNetCidr: 10.0.114.0/24
+  TenantNetworkVlanID: 730 
+  TenantAllocationPools: [{'start': '10.0.114.100', 'end': '10.0.114.199'}]
+  InternalApiNetCidr: 10.0.115.0/24
+  InternalApiNetworkVlanID: 710
+  InternalApiAllocationPools: [{'start': '10.0.115.100', 'end': '10.0.115.199'}]
+  StorageMgmtNetCidr: 10.0.116.0/24
+  StorageMgmtNetworkVlanID: 750
+  StorageMgmtAllocationPools: [{'start': '10.0.116.100', 'end': '10.0.116.199'}]
+  BondInterfaceOvsOptions: "bond_mode=active-backup"
+  # START: Contrail settings
+  NeutronMetadataProxySharedSecret: secret
+  ContrailRegistryInsecure: true
+  DockerInsecureRegistryAddress: 10.0.110.3:8787
+  #ContrailRegistry: 10.0.110.3:8787/opencontrailnightly
+  ContrailRegistry: 10.0.110.3:8787
+  #ContrailImageTag: queens-master-385
+  ContrailImageTag: queens-dev
+  ContrailSettings:
+    VROUTER_GATEWAY: 10.0.114.1
+  # END: Contrail settings
+  swap_size_megabytes: 65536
+  ComputeParameters:
+    KernelArgs: "intel_iommu=on"
+  ControllerParameters:
+    KernelArgs: "intel_iommu=on"
+  ExtraConfig:
+    tripleo::profile::base::docker::network_options: "--bip=10.10.10.1/24"
+    nova::scheduler::filter::scheduler_default_filters:
+      - RetryFilter
+      - AggregateInstanceExtraSpecsFilter
+      - AvailabilityZoneFilter
+      - ComputeFilter
+      - ComputeCapabilitiesFilter
+      - ImagePropertiesFilter
+    tripleo::firewall::firewall_rules:
+      '997 drop all to prevent log spam':
+        proto: 'all'
+        action: 'drop'
