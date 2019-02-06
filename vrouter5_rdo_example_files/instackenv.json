@@ -1,0 +1,57 @@
+{
+    "nodes": [
+        {
+            "name":"<compute1_name>",
+            "pm_type":"pxe_ipmitool",
+            "mac":[
+                "<compute1_mac>"
+            ],
+            "arch":"x86_64",
+            "pm_user":"ADMIN",
+            "pm_password":"ADMIN",
+            "pm_addr":"<conpute1_ipmi_addr>",
+            "capabilities": "profile:compute",
+            "_comment": "Compute1 profile"
+        },
+        {
+            "name":"<compute2_name>",
+            "pm_type":"pxe_ipmitool",
+            "mac":[
+                "<compute2_mac>"
+            ],
+            "arch":"x86_64",
+            "pm_user":"ADMIN",
+            "pm_password":"ADMIN",
+            "pm_addr":"<compute2_ipmi_addr>",
+            "capabilities": "profile:compute",
+            "_comment": "Compute2 profile"
+        },
+        {
+            "name":"<contrail_name>",
+            "pm_type":"pxe_ipmitool",
+            "mac":[
+                "<contrail_mac>"
+            ],
+            "arch":"x86_64",
+            "pm_user":"ADMIN",
+            "pm_password":"ADMIN",
+            "pm_addr":"<contrail_ipmi_addr>",
+            "capabilities": "profile:contrail-controller",
+            "_comment": "Contrail control node profile"
+        },
+        {
+            "name":"<control_name>",
+            "pm_type":"pxe_ipmitool",
+            "mac":[
+                "<control_mac>"
+            ],
+            "arch":"x86_64",
+            "pm_user":"ADMIN",
+            "pm_password":"ADMIN",
+            "pm_addr":"<control_ipmi_addr>",
+            "capabilities": "profile:control",
+            "_comment": "Openstack control node profile"
+        }
+    ]
+}
+
